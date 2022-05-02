@@ -30,5 +30,10 @@ namespace PlayFabStudy
 
         #endregion Login
 
+        public void OnClickQuickMatch()
+        {
+
+        }
+
     }
 }

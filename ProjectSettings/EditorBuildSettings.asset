@@ -4,5 +4,8 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/PlayFabPartySDK/Examples/Demo.unity
+    guid: 90ed8f4ff8252ab48bdcc82162c88122
   m_configObjects: {}

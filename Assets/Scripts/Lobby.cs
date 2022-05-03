@@ -2,6 +2,7 @@
 using PlayFabStudy.Handlers;
 using PlayFabStudy.Helpers;
 using PlayFabStudy.Models;
+using System.Linq;
 using UnityEngine;
 
 namespace PlayFabStudy
@@ -47,8 +48,20 @@ namespace PlayFabStudy
             await quickMatchHandler.CreateTicket(new QuickMatchAttributes { Skill = "skill" });
             await quickMatchHandler.EnsureGetTicketStatus();
 
-            Debug.Log("종료");
+            Debug.Log(quickMatchHandler.Status);
 
+            if(quickMatchHandler.Status == MatchmakingHandler.TicketStatus.Matched)
+            {
+                Debug.Log("매치완료");
+                var matchResult = await quickMatchHandler.GetMatch();
+                var orderedPlayers = matchResult?.Members?.OrderBy(member => member.Entity.Id).ToList();
+                var playerOne = orderedPlayers?.ElementAtOrDefault(0) ?? null;
+                var playerTwo = orderedPlayers?.ElementAtOrDefault(1) ?? null;
+
+                Debug.Log(quickMatchHandler.MatchId);
+                Debug.Log($"{playerOne.Entity.Id} {playerOne.Attributes.DataObject}");
+                Debug.Log($"{playerTwo.Entity.Id} {playerTwo.Attributes.DataObject}");
+            }
         }
 
         public void OnClickCancel()

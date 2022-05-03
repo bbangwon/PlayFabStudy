@@ -13,10 +13,21 @@ namespace PlayFabStudy.Handlers
     {
         public const string Canceled = "Canceled";
         public const string Matched = "Matched";
+        public const string WaitingForMatch = "WaitingForMatch";
     }
 
     public class MatchmakingHandler
     {
+        public enum TicketStatus
+        {
+            NotReady,
+            Matched,
+            Canceled,            
+            WaitingForMatch,
+            WaitingForPlayers,
+            WaitingForServer
+        }
+
         PlayerInfo Player;
 
         public MatchmakingQueueConfiguration QueueConfiguration { get; set; }
@@ -29,11 +40,23 @@ namespace PlayFabStudy.Handlers
 
         public string TicketId => this.MatchmakingTicketResult?.TicketId ?? "";
         public string MatchId => this.MatchmakingTicketStatus?.MatchId ?? "";
-        public string Status => this.MatchmakingTicketStatus?.Status ?? "";
+
+        public TicketStatus Status
+        {
+            get
+            {
+                if (this.MatchmakingTicketStatus == null)
+                    return TicketStatus.NotReady;
+
+                return (TicketStatus)Enum.Parse(typeof(TicketStatus), this.MatchmakingTicketStatus.Status);
+            }
+        }
 
         CancellationTokenSource cancellationTokenSource;
 
-        bool isPooling = false;
+        public bool IsMatched => MatchmakingTicketStatus?.Status == MatchmakingTicketStatusStrings.Matched;
+        public bool IsCanceled => MatchmakingTicketStatus?.Status == MatchmakingTicketStatusStrings.Canceled;
+        public bool IsWaitingForMatch => MatchmakingTicketStatus?.Status == MatchmakingTicketStatusStrings.WaitingForMatch;
 
         public MatchmakingHandler(PlayerInfo player, MatchmakingQueueConfiguration configuration)
         {

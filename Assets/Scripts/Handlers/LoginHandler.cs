@@ -28,10 +28,10 @@ namespace PlayFabStudy.Handlers
                         Id = result.EntityToken.Entity.Id,
                         Type = result.EntityToken.Entity.Type
                     },
-                    PlayFabAuthenticationContext = new PlayFabAuthenticationContext()
+                    AuthenticationContext = new PlayFabAuthenticationContext()
                 };
 
-                currentPlayer.PlayFabAuthenticationContext.CopyFrom(result.AuthenticationContext);
+                currentPlayer.AuthenticationContext.CopyFrom(result.AuthenticationContext);
 
                 OnSuccess(currentPlayer);
 

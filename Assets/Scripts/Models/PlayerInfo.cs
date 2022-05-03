@@ -9,6 +9,6 @@ namespace PlayFabStudy.Models
         public string PlayFabId { get; set; }
         public string SessionTicket { get; set; }
         public EntityKey Entity { get; set; }
-        public PlayFabAuthenticationContext PlayFabAuthenticationContext { get; set; }
+        public PlayFabAuthenticationContext AuthenticationContext { get; set; }
     } 
 }

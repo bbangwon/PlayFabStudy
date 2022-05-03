@@ -6,4 +6,6 @@ public class Constants
 
     // Matchmaking GiveUp After Seconds
     public const int GIVE_UP_AFTER_SECONDS = 120;
+
+    public const float RETRY_GET_TICKET_STATUS_AFTER_SECONDS = 6;
 }

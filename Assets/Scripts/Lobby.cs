@@ -1,11 +1,15 @@
-﻿using PlayFabStudy.Handlers;
+﻿using Cysharp.Threading.Tasks;
+using PlayFabStudy.Handlers;
+using PlayFabStudy.Helpers;
 using PlayFabStudy.Models;
 using UnityEngine;
 
 namespace PlayFabStudy
 {
     public class Lobby : MonoBehaviour
-    {        
+    {
+        MatchmakingHandler quickMatchHandler;
+
         void Start()
         {
             if(ApplicationModel.CurrentPlayer == null)
@@ -30,9 +34,26 @@ namespace PlayFabStudy
 
         #endregion Login
 
-        public void OnClickQuickMatch()
+        public async void OnClickQuickMatch()
         {
+            if (quickMatchHandler != null) return;
 
+            quickMatchHandler = new MatchmakingHandler(ApplicationModel.CurrentPlayer, new MatchmakingQueueConfiguration { 
+                QueueName = Constants.QUICK_MATCHMAKING_QUEUE_NAME,
+                EscapeObject = false,
+                ReturnMemberAttributes = true            
+            });
+
+            await quickMatchHandler.CreateTicket(new QuickMatchAttributes { Skill = "skill" });
+            await quickMatchHandler.EnsureGetTicketStatus();
+
+            Debug.Log("종료");
+
+        }
+
+        public void OnClickCancel()
+        {
+            quickMatchHandler.CancelPlayerTicket().Forget();
         }
 
     }

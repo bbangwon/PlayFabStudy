@@ -9,7 +9,7 @@ namespace PlayFabStudy
 {
     public class Lobby : MonoBehaviour
     {
-        MatchmakingHandler quickMatchHandler;
+        QuickAndPartyMatchmakingManager quickMatchHandler;
 
         void Start()
         {
@@ -39,34 +39,21 @@ namespace PlayFabStudy
         {
             if (quickMatchHandler != null) return;
 
-            quickMatchHandler = new MatchmakingHandler(ApplicationModel.CurrentPlayer, new MatchmakingQueueConfiguration { 
-                QueueName = Constants.QUICK_MATCHMAKING_QUEUE_NAME,
-                EscapeObject = false,
-                ReturnMemberAttributes = true            
-            });
-
-            await quickMatchHandler.CreateTicket(new QuickMatchAttributes { Skill = "skill" });
-            await quickMatchHandler.EnsureGetTicketStatus();
-
-            Debug.Log(quickMatchHandler.Status);
-
-            if(quickMatchHandler.Status == MatchmakingHandler.TicketStatus.Matched)
+            quickMatchHandler = new QuickAndPartyMatchmakingManager(
+                ApplicationModel.CurrentPlayer,
+                Constants.QUICK_MATCHMAKING_QUEUE_NAME,
+                Constants.PARTY_MATCHMAKING_QUEUE_NAME)
             {
-                Debug.Log("매치완료");
-                var matchResult = await quickMatchHandler.GetMatch();
-                var orderedPlayers = matchResult?.Members?.OrderBy(member => member.Entity.Id).ToList();
-                var playerOne = orderedPlayers?.ElementAtOrDefault(0) ?? null;
-                var playerTwo = orderedPlayers?.ElementAtOrDefault(1) ?? null;
+                GiveUpAfterSeconds = Constants.GIVE_UP_AFTER_SECONDS,
+                QuickMatchAttributes = new QuickMatchAttributes { Skill = "skill" }
+            };
 
-                Debug.Log(quickMatchHandler.MatchId);
-                Debug.Log($"{playerOne.Entity.Id} {playerOne.Attributes.DataObject}");
-                Debug.Log($"{playerTwo.Entity.Id} {playerTwo.Attributes.DataObject}");
-            }
+            await quickMatchHandler.BeginMatch();
         }
 
         public void OnClickCancel()
         {
-            quickMatchHandler.CancelPlayerTicket().Forget();
+            quickMatchHandler.Cancel();
         }
 
     }

@@ -4,6 +4,8 @@ public class Constants
 
     public const string QUICK_MATCHMAKING_QUEUE_NAME = "QuickMatch";
 
+    public const string PARTY_MATCHMAKING_QUEUE_NAME = "PartyMatch";
+
     // Matchmaking GiveUp After Seconds
     public const int GIVE_UP_AFTER_SECONDS = 120;
 

@@ -9,18 +9,11 @@ using System;
 
 namespace PlayFabStudy.Handlers
 {
-    public class MatchmakingTicketStatusStrings
-    {
-        public const string Canceled = "Canceled";
-        public const string Matched = "Matched";
-        public const string WaitingForMatch = "WaitingForMatch";
-    }
-
     public class MatchmakingHandler
     {
         public enum TicketStatus
         {
-            NotReady,
+            NotStarted,
             Matched,
             Canceled,            
             WaitingForMatch,
@@ -46,7 +39,7 @@ namespace PlayFabStudy.Handlers
             get
             {
                 if (this.MatchmakingTicketStatus == null)
-                    return TicketStatus.NotReady;
+                    return TicketStatus.NotStarted;
 
                 return (TicketStatus)Enum.Parse(typeof(TicketStatus), this.MatchmakingTicketStatus.Status);
             }
@@ -54,9 +47,9 @@ namespace PlayFabStudy.Handlers
 
         CancellationTokenSource cancellationTokenSource;
 
-        public bool IsMatched => MatchmakingTicketStatus?.Status == MatchmakingTicketStatusStrings.Matched;
-        public bool IsCanceled => MatchmakingTicketStatus?.Status == MatchmakingTicketStatusStrings.Canceled;
-        public bool IsWaitingForMatch => MatchmakingTicketStatus?.Status == MatchmakingTicketStatusStrings.WaitingForMatch;
+        public bool IsMatched => Status == TicketStatus.Matched;
+        public bool IsCanceled => Status == TicketStatus.Canceled;
+        public bool IsWaitingForMatch => Status == TicketStatus.WaitingForMatch;
 
         public MatchmakingHandler(PlayerInfo player, MatchmakingQueueConfiguration configuration)
         {
@@ -178,7 +171,7 @@ namespace PlayFabStudy.Handlers
             }
 
             //매치메이킹 상태 확인
-            if (this.MatchmakingTicketStatus == null || this.MatchmakingTicketStatus.Status != MatchmakingTicketStatusStrings.Matched)
+            if (this.MatchmakingTicketStatus == null || !this.IsMatched)
             {
                 var result = $"매치메이킹 매치 되지 않음.";
                 Debug.LogError(result);
@@ -226,12 +219,12 @@ namespace PlayFabStudy.Handlers
             do
             {
                 await GetTicketStatus();
-                if (this.MatchmakingTicketStatus.Status == MatchmakingTicketStatusStrings.Canceled)
+                if (this.IsCanceled)
                 {
                     this.MatchmakingTicketStatus = null;
                 }
 
-                if (this.MatchmakingTicketStatus != null && this.MatchmakingTicketStatus.Status != MatchmakingTicketStatusStrings.Matched)
+                if (this.MatchmakingTicketStatus != null && !this.IsMatched)
                 {
                     try
                     {
@@ -241,8 +234,8 @@ namespace PlayFabStudy.Handlers
                 }
             }
             while (MatchmakingTicketStatus != null
-                && MatchmakingTicketStatus.Status != MatchmakingTicketStatusStrings.Matched
-                && MatchmakingTicketStatus.Status != MatchmakingTicketStatusStrings.Canceled);
+                && !this.IsMatched
+                && !this.IsCanceled);
 
             cancellationTokenSource = null;
         }

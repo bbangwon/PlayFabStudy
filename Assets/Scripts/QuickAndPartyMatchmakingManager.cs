@@ -14,7 +14,7 @@ namespace PlayFabStudy
         public string PartyQueueName { get; private set; }
 
         MatchmakingHandler quickHandler;
-        MatchmakingHandler partyHandler;
+        MatchmakingHandler partyHandler;        
 
         public int GiveUpAfterSeconds { get; set; } = 120;
         public bool EscapeObject { get; set; } = false;
@@ -23,6 +23,21 @@ namespace PlayFabStudy
         public PartyTicketAttributes PartyTicketAttributes { get; private set; } = null;
 
         public PlayerInfo Player { get; private set; }
+
+        public PartyNetworkHandler Party { get; private set; }
+
+        public delegate void OnMatchCompletedHandler(PartyNetworkHandler partyNetworkHandler);
+        public event OnMatchCompletedHandler OnMatchCompleted;
+
+        public enum States
+        {
+            NotInitialized,
+            Initialized,
+            Matching,            
+            MatchCompleted
+        }
+
+        public States State { get; private set; } = States.NotInitialized;
 
         public  QuickAndPartyMatchmakingManager(PlayerInfo player, string quickQueueName, string partyQueueName)
         {
@@ -45,6 +60,9 @@ namespace PlayFabStudy
                 ReturnMemberAttributes = true,
                 GiveUpAfterSeconds = this.GiveUpAfterSeconds
             });
+
+            Party = new PartyNetworkHandler();
+            State = States.Initialized;
         }
 
         public async UniTask BeginMatch()
@@ -57,13 +75,14 @@ namespace PlayFabStudy
 
                 if(partyHandler.IsMatched)
                 {
-                    PostPartyMatched().Forget();
+                    await PostPartyMatched();
                 }
             }
         }
 
         async UniTask BeginQuickMatch()
         {
+            State = States.Matching;
             await quickHandler.CreateTicket(this.QuickMatchAttributes);
             await quickHandler.EnsureGetTicketStatus();
 
@@ -84,7 +103,8 @@ namespace PlayFabStudy
             {
                 //Host Player인 경우
                 //Party 네트워크를 생성하고 네트워크 ID를 가져온다.
-                networkId = "NetworkId";
+                await Party.CreateAndJoinToNetwork();
+                networkId = Party.NetworkId;
             }
 
             return networkId;
@@ -100,7 +120,7 @@ namespace PlayFabStudy
             await partyHandler.EnsureGetTicketStatus();
         }
 
-        async UniTaskVoid PostPartyMatched()
+        async UniTask PostPartyMatched()
         {
             Debug.Log("Party 매치완료");
             var matchResult = await partyHandler.GetMatch();
@@ -109,14 +129,21 @@ namespace PlayFabStudy
             Debug.Log($"매치ID = {partyHandler.MatchId}");
             Debug.Log($"{hostPlayer.Entity.Id} {hostPlayer.Attributes.DataObject}");
 
-            var hostPlayerAttribute = JsonUtility.FromJson<PartyTicketAttributes>(hostPlayer.Attributes.DataObject.ToString());
-            Debug.Log($"접속할 네트워크 ID = {hostPlayerAttribute.NetworkId}");
-
             if (this.Player.Entity.Id != hostPlayer.Entity.Id)
             {
                 // host Player가 아닌 경우
                 // Party Network 에 Join
+
+                var hostPlayerAttribute = JsonUtility.FromJson<PartyTicketAttributes>(hostPlayer.Attributes.DataObject.ToString());
+                Debug.Log($"접속할 네트워크 ID = {hostPlayerAttribute.NetworkId}");
+
+                await Party.JoinNetwork(hostPlayerAttribute.NetworkId);
             }
+
+            await UniTask.WaitUntil(() => Party.State == PlayFab.Party.PlayFabMultiplayerManagerState.ConnectedToNetwork);
+            State = States.MatchCompleted;
+
+            OnMatchCompleted?.Invoke(Party);
         }
 
         MatchmakingPlayerWithTeamAssignment GetPlayer(GetMatchResult matchResult, int index = 0)
@@ -131,17 +158,19 @@ namespace PlayFabStudy
             return player;
         }
 
-        public void Cancel()
+        public async UniTask CancelMatch()
         {
             if(quickHandler.Status != MatchmakingHandler.TicketStatus.NotStarted)
             {
-                quickHandler.CancelPlayerTicket().Forget();
+                await quickHandler.CancelPlayerTicket();
             }
 
             if(partyHandler.Status != MatchmakingHandler.TicketStatus.NotStarted)
             {
-                partyHandler.CancelPlayerTicket().Forget();
+                await partyHandler.CancelPlayerTicket();
             }
+
+            State = States.Initialized;
         }
     }
 }

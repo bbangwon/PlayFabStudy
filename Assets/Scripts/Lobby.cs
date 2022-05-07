@@ -1,9 +1,11 @@
 ﻿using Cysharp.Threading.Tasks;
+using PlayFab.Party;
 using PlayFabStudy.Handlers;
 using PlayFabStudy.Helpers;
 using PlayFabStudy.Models;
-using System.Linq;
+using System;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace PlayFabStudy
 {
@@ -48,13 +50,26 @@ namespace PlayFabStudy
                 QuickMatchAttributes = new QuickMatchAttributes { Skill = "skill" }
             };
 
-            await quickMatchHandler.BeginMatch();
+            quickMatchHandler.OnMatchCompleted += QuickMatchHandler_OnMatchCompleted;
+            await quickMatchHandler.BeginMatch();            
         }
 
         public void OnClickCancel()
         {
-            quickMatchHandler.Cancel();
+            if (quickMatchHandler == null || quickMatchHandler.State != QuickAndPartyMatchmakingManager.States.Matching)
+                return;
+
+            quickMatchHandler.OnMatchCompleted -= QuickMatchHandler_OnMatchCompleted;
+            quickMatchHandler.CancelMatch().Forget();
+            quickMatchHandler = null;
         }
 
+        private void QuickMatchHandler_OnMatchCompleted(PartyNetworkHandler partyNetworkHandler)
+        {
+            quickMatchHandler.OnMatchCompleted -= QuickMatchHandler_OnMatchCompleted;
+            ApplicationModel.PartyNetwork = partyNetworkHandler;
+
+            SceneManager.LoadScene("Play");           
+        }
     }
 }

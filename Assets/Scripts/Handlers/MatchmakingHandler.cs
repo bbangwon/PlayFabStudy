@@ -87,7 +87,7 @@ namespace PlayFabStudy.Handlers
             return await utcs.Task;
         }
 
-        public async UniTaskVoid CancelPlayerTicket()
+        public async UniTask CancelPlayerTicket()
         {
             var utcs = new UniTaskCompletionSource();
 
